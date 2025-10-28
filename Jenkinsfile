@@ -11,7 +11,7 @@ pipeline {
         DOCKERHUB_REPO = "jayu3110/boardgame-listing"
         IMAGE_NAME = "boardgame-listing"
         SONARQUBE_ENV = 'MySonarQubeServer' 
-        BASTION_HOST = 'ec2-3-108-53-57.ap-south-1.compute.amazonaws.com'
+        BASTION_HOST = 'ec2-13-229-47-163.ap-southeast-1.compute.amazonaws.com'
         BASTION_USER = 'ec2-user'
     }
 
