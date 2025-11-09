@@ -64,13 +64,13 @@ pipeline {
             ${IMAGE_NAME}
             '''
         }}
-        // stage('SonarQube Analysis') {
-        //     steps {
-        //         withSonarQubeEnv("${SONARQUBE_ENV}") {
-        //             sh "mvn clean verify sonar:sonar -Dsonar.projectKey=Boardgame -Dsonar.projectName='Boardgame'"
-        //         }
-        //     }
-        // }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=Boardgame -Dsonar.projectName='Boardgame'"
+                }
+            }
+        }
         stage('OWASP Dependency-Check Vulnerabilities') {
             steps {
             dependencyCheck additionalArguments: ''' 
