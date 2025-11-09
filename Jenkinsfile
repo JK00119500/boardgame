@@ -1,10 +1,12 @@
 pipeline {
-    agent any
+    // agent {
+    //     docker { image 'node:24.11.0-alpine3.22' }
+    // }
 
     tools {   
         maven 'Maven3'
         jdk 'JDK17'
-        docker 'docker'
+        //docker 'docker'
     }
 
     environment {
