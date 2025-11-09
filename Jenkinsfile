@@ -35,6 +35,9 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
+                sh "sudo usermod -aG docker jenkins"
+                sh "sudo systemctl restart docker"
+                sh "sudo systemctl restart jenkins"
                 sh "pwd"
                 sh "ls -lrt"
                 sh "docker build --no-cache -t ${IMAGE_NAME}:latest ."
