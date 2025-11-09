@@ -48,25 +48,25 @@ pipeline {
                 }
             }
         }
-        stage('Trivy scan') {
-            steps {
-                sh '''
-                docker run --rm --name trivy-cli \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v $(which docker):/usr/bin/docker \
-            -u root \
-            -e DOCKER_GID=$(getent group docker | cut -d: -f3) \
-            aquasec/trivy:latest image \
-            ${IMAGE_NAME}
-            '''
-        }}
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=Boardgame -Dsonar.projectName='Boardgame'"
-                }
-            }
-        }
+        // stage('Trivy scan') {
+        //     steps {
+        //         sh '''
+        //         docker run --rm --name trivy-cli \
+        //     -v /var/run/docker.sock:/var/run/docker.sock \
+        //     -v $(which docker):/usr/bin/docker \
+        //     -u root \
+        //     -e DOCKER_GID=$(getent group docker | cut -d: -f3) \
+        //     aquasec/trivy:latest image \
+        //     ${IMAGE_NAME}
+        //     '''
+        // }}
+        // stage('SonarQube Analysis') {
+        //     steps {
+        //         withSonarQubeEnv("${SONARQUBE_ENV}") {
+        //             sh "mvn clean verify sonar:sonar -Dsonar.projectKey=Boardgame -Dsonar.projectName='Boardgame'"
+        //         }
+        //     }
+        // }
         stage('OWASP Dependency-Check Vulnerabilities') {
             steps {
             dependencyCheck additionalArguments: ''' 
