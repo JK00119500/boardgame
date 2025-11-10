@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: boardgame-app
+  namespace: capstone
+  labels:
+    app: boardgame-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: boardgame-app
+  template:
+    metadata:
+      labels:
+        app: boardgame-app
+    spec:
+      containers:
+        - name: boardgame
+          image: jayu3110/boardgame-listing:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
