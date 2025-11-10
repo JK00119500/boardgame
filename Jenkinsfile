@@ -14,6 +14,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = "docker_hub_cred"
         DOCKERHUB_REPO = "jayu3110/boardgame-listing"
         IMAGE_NAME = "boardgame-listing"
+        IMAGE_TAG = "${env.GIT_COMMIT.take(7)}"
         SONARQUBE_ENV = 'MySonarQubeServer' 
         BASTION_HOST = 'ec2-13-229-47-163.ap-southeast-1.compute.amazonaws.com'
         BASTION_USER = 'ec2-user'
