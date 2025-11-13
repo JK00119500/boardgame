@@ -9,9 +9,9 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
 
   # Enable public endpoint so you can access from your local machine
-  cluster_endpoint_public_access  = true
-  cluster_endpoint_private_access = true
-  cluster_endpoint_public_access_cidrs     = ["223.185.36.255/32"]
+  cluster_endpoint_public_access       = true
+  cluster_endpoint_private_access      = true
+  cluster_endpoint_public_access_cidrs = ["223.185.36.255/32"]
 
   eks_managed_node_groups = {
     default = {
@@ -24,9 +24,9 @@ module "eks" {
       iam_role_arn   = aws_iam_role.eks_node_role.arn
     }
   }
- access_entries = {
+  access_entries = {
     admin = {
-      principal_arn     = "arn:aws:iam::599801266123:root"  
+      principal_arn     = "arn:aws:iam::599801266123:root"
       kubernetes_groups = ["system:masters"]
     }
   }
