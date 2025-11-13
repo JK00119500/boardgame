@@ -13,14 +13,6 @@ module "eks" {
   cluster_endpoint_private_access = true
   cluster_endpoint_public_access_cidrs     = ["223.185.36.255/32"]
 
-    map_users = [
-    {
-      userarn  = "arn:aws:iam::599801266123:root"
-      username = "tf-admin"
-      groups   = ["system:masters"]
-    }
-  ]
-
   eks_managed_node_groups = {
     default = {
       desired_size = 2
@@ -32,9 +24,12 @@ module "eks" {
       iam_role_arn   = aws_iam_role.eks_node_role.arn
     }
   }
-
-  # Disable control plane logs by providing an empty list
-  cluster_enabled_log_types = []
+ access_entries = {
+    admin = {
+      principal_arn     = "arn:aws:iam::599801266123:root"  
+      kubernetes_groups = ["system:masters"]
+    }
+  }
 
   tags = {
     Environment = "dev"
