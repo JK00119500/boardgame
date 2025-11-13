@@ -26,7 +26,7 @@ module "eks" {
   }
   access_entries = {
     admin = {
-      principal_arn     = "arn:aws:iam::599801266123:root"
+      principal_arn     = "arn:aws:iam::599801266123:user/boardgame-terraform"
       kubernetes_groups = ["system:masters"]
     }
   }
