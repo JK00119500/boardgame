@@ -12,10 +12,10 @@ pipeline {
     DOCKERHUB_REPO        = "jayu3110/boardgame-listing"
     IMAGE_NAME            = "boardgame-listing"
     IMAGE_TAG             = "${env.GIT_COMMIT.take(7)}"
-    SONARQUBE_ENV         = "MySonarQubeServer"
-    AWS_REGION            = "ap-south-1"
-    EKS_CLUSTER_NAME      = "boardgame-eks-cluster"
-    KUBE_NAMESPACE        = "capstone"
+    SONARQUBE_ENV         = 'MySonarQubeServer'
+    AWS_REGION            = 'ap-south-1'
+    EKS_CLUSTER_NAME      = 'boardgame-eks-cluster'
+    KUBE_NAMESPACE        = 'capstone'
   }
 
   stages {
@@ -69,10 +69,41 @@ pipeline {
       }
     }
 
-    // Optional stages (left commented as in your original Jenkinsfile)
-    // stage('Trivy scan') { ... }
-    // stage('SonarQube Analysis') { ... }
-    // stage('OWASP Dependency-Check Vulnerabilities') { ... }
+    stage('Trivy scan') {
+      steps {
+        sh '''
+          docker run --rm --name trivy-cli \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -u root \
+            aquasec/trivy:latest image \
+            ${IMAGE_NAME}:latest
+        '''
+      }
+    }
+
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv("${SONARQUBE_ENV}") {
+          sh """
+            mvn clean verify sonar:sonar \
+              -Dsonar.projectKey=Boardgame \
+              -Dsonar.projectName='Boardgame'
+          """
+        }
+      }
+    }
+
+    stage('OWASP Dependency-Check Vulnerabilities') {
+      steps {
+        dependencyCheck additionalArguments: '''
+          -o './'
+          -s './'
+          -f 'ALL'
+          --prettyPrint''',
+          odcInstallation: 'owasp-DC'
+        dependencyCheckPublisher pattern: 'dependency-check-report.xml'
+      }
+    }
 
     stage('Deploy to EKS') {
       steps {
@@ -90,7 +121,7 @@ pipeline {
             aws sts get-caller-identity || { echo "AWS creds not working"; exit 1; }
 
             echo "=== Updating kubeconfig for EKS ==="
-            export AWS_DEFAULT_REGION='${AWS_REGION}'
+            export AWS_DEFAULT_REGION=${AWS_REGION}
             aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
 
             echo "=== Ensuring namespace exists ==="
@@ -105,7 +136,7 @@ pipeline {
             kubectl rollout restart deployment/boardgame-app -n ${KUBE_NAMESPACE}
 
             echo "=== Waiting for rollout to finish ==="
-            kubectl rollout status deployment/boardgame-app -n ${KUBE_NAMESPACE} || true
+            kubectl rollout status deployment/boardgame-app -n ${KUBE_NAMESPACE}
           '''
         }
       }
