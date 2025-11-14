@@ -17,5 +17,6 @@ spec:
       containers:
         - name: boardgame-app
           image: jayu3110/boardgame-listing:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
