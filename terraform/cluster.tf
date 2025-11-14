@@ -11,7 +11,7 @@ module "eks" {
   # EKS API endpoint access
   cluster_endpoint_public_access       = true
   cluster_endpoint_private_access      = true
-  # For demo: allow from anywhere. In real use, restrict to your IP / VPN.
+  # Demo साठी open; real मध्ये इथे तुमचा office / Jenkins IP / VPN द्यायचा
   cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"]
 
   # Managed node group
@@ -23,14 +23,13 @@ module "eks" {
 
       instance_types = ["t3.medium"]
       capacity_type  = "ON_DEMAND"
-      # Let module create the IAM role for node group automatically
     }
   }
 
-  # Extra rule on node security group – allow inbound app traffic on 8080
+  # Nodes साठी SG वर 8080 open (NLB/ELB traffic)
   node_security_group_additional_rules = {
     ingress_http_8080 = {
-      description      = "Allow inbound HTTP traffic on 8080 from internet"
+      description      = "Allow inbound 8080"
       protocol         = "tcp"
       from_port        = 8080
       to_port          = 8080
@@ -40,16 +39,20 @@ module "eks" {
     }
   }
 
-  # EKS Access Entries – give Jenkins IAM user cluster-admin access
+  # Terraform चालवणारा user स्वतः admin होईल
+  enable_cluster_creator_admin_permissions = true
+
+  # Jenkins / boardgame-terraform user साठी explicit admin access
   access_entries = {
     jenkins_admin = {
       principal_arn = "arn:aws:iam::599801266123:user/boardgame-terraform"
 
-      access_policy_associations = {
+      policy_associations = {
         admin = {
           policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
           access_scope = {
-            type = "cluster"
+            type       = "cluster"
+            namespaces = []
           }
         }
       }
