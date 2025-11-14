@@ -21,7 +21,6 @@ module "eks" {
 
       instance_types = ["t3.medium"]
       capacity_type  = "ON_DEMAND"
-      iam_role_arn   = aws_iam_role.eks_node_role.arn
     }
   }
   access_entries = {
