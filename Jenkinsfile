@@ -87,26 +87,36 @@ pipeline {
             }
         }
 
-        stage('Deploy to EKS') {
-            steps {
-                sh '''
-		withCredentials([aws(credentialsId: 'aws_eks_access', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                echo "Updating kubeconfig for EKS..."
-                aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
+       stage('Deploy to EKS') {
+    steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                          credentialsId: 'aws_eks_access',
+                          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
 
-                echo "Ensuring namespace exists..."
-                kubectl create namespace ${KUBE_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+            sh '''
+            set -e
 
-                echo "Applying Kubernetes manifests..."
-                kubectl apply -f k8s/namespace.yml
-                kubectl apply -f k8s/deployment.yml -n ${KUBE_NAMESPACE}
-                kubectl apply -f k8s/service.yaml -n ${KUBE_NAMESPACE}
+            echo "=== AWS identity check ==="
+            aws sts get-caller-identity
 
-                echo "Waiting for deployment rollout..."
-                kubectl rollout status deployment/boardgame-app -n ${KUBE_NAMESPACE}
-                '''
-            }
+            echo "=== Updating kubeconfig for EKS ==="
+            aws eks update-kubeconfig --name boardgame-eks-cluster --region ap-south-1
+
+            echo "=== Ensuring namespace exists ==="
+            kubectl create namespace capstone --dry-run=client -o yaml | kubectl apply -f -
+
+            echo "=== Applying Kubernetes manifests ==="
+            kubectl apply -f k8s/namespace.yml
+            kubectl apply -f k8s/deployment.yml -n capstone
+            kubectl apply -f k8s/service.yaml -n capstone
+
+            echo "=== Waiting for rollout ==="
+            kubectl rollout status deployment/boardgame-app -n capstone
+            '''OB
         }
     }
+}
+}
 }
 
