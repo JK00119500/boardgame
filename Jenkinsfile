@@ -47,9 +47,13 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: "${DOCKERHUB_CREDENTIALS}",
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     docker push ${DOCKERHUB_REPO}:latest
                     '''
                 }
@@ -87,36 +91,36 @@ pipeline {
             }
         }
 
-       stage('Deploy to EKS') {
-    steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
-                          credentialsId: 'aws_eks_access',
-                          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-                          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+        stage('Deploy to EKS') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws_eks_access',         
+                    usernameVariable: 'AWS_ACCESS_KEY_ID',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                )]) {
+                    sh '''
+                    set -e
 
-            sh '''
-            set -e
+                    echo "=== AWS identity check ==="
+                    aws sts get-caller-identity || { echo "AWS creds not working"; exit 1; }
 
-            echo "=== AWS identity check ==="
-            aws sts get-caller-identity
+                    echo "=== Updating kubeconfig for EKS ==="
+                    export AWS_DEFAULT_REGION='${AWS_REGION}'
+                    aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
 
-            echo "=== Updating kubeconfig for EKS ==="
-            aws eks update-kubeconfig --name boardgame-eks-cluster --region ap-south-1
+                    echo "=== Ensuring namespace exists ==="
+                    kubectl create namespace ${KUBE_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 
-            echo "=== Ensuring namespace exists ==="
-            kubectl create namespace capstone --dry-run=client -o yaml | kubectl apply -f -
+                    echo "=== Applying Kubernetes manifests ==="
+                    kubectl apply -f k8s/namespace.yml
+                    kubectl apply -f k8s/deployment.yml -n ${KUBE_NAMESPACE}
+                    kubectl apply -f k8s/service.yaml -n ${KUBE_NAMESPACE}
 
-            echo "=== Applying Kubernetes manifests ==="
-            kubectl apply -f k8s/namespace.yml
-            kubectl apply -f k8s/deployment.yml -n capstone
-            kubectl apply -f k8s/service.yaml -n capstone
-
-            echo "=== Waiting for rollout ==="
-            kubectl rollout status deployment/boardgame-app -n capstone
-            '''OB
+                    echo "=== Waiting for rollout ==="
+                    kubectl rollout status deployment/boardgame-app -n ${KUBE_NAMESPACE}
+                    '''
+                }
+            }
         }
     }
 }
-}
-}
-
