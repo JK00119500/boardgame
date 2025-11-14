@@ -112,8 +112,8 @@ pipeline {
                     kubectl create namespace ${KUBE_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
 
                     echo "=== Applying Kubernetes manifests ==="
-                    kubectl apply -f k8s/namespace.yml
-                    kubectl apply -f k8s/deployment.yml -n ${KUBE_NAMESPACE}
+                    kubectl apply -f k8s/namespace.yaml
+                    kubectl apply -f k8s/deployment.yaml -n ${KUBE_NAMESPACE}
                     kubectl apply -f k8s/service.yaml -n ${KUBE_NAMESPACE}
 
                     echo "=== Waiting for rollout ==="
