@@ -34,12 +34,6 @@ provider "kubernetes" {
   load_config_file       = false
 }
 
-# ============================================================
-# Security group rules for public access to the Load Balancer
-# ============================================================
-# Using the additional SG: sg-068b519bad73771fa
-# (We are NOT opening the cluster SG to the world.)
-
 # Allow HTTP-style access on port 8080 from anywhere to the Load Balancer SG
 resource "aws_security_group_rule" "lb_public_ingress_8080" {
   type              = "ingress"
@@ -51,7 +45,6 @@ resource "aws_security_group_rule" "lb_public_ingress_8080" {
   description       = "Allow public access to Load Balancer on 8080"
 }
 
-# (Optional) Allow HTTPS (443) from anywhere if you plan TLS termination later
 resource "aws_security_group_rule" "lb_public_ingress_https" {
   type              = "ingress"
   from_port         = 443
