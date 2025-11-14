@@ -11,7 +11,7 @@ module "eks" {
   # Enable public endpoint so you can access from your local machine
   cluster_endpoint_public_access       = true
   cluster_endpoint_private_access      = true
-  cluster_endpoint_public_access_cidrs = ["223.185.36.255/32"]
+  cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"]
 
   eks_managed_node_groups = {
     default = {
