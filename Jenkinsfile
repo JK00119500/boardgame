@@ -90,6 +90,7 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 sh '''
+		withCredentials([aws(credentialsId: 'aws_eks_access', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                 echo "Updating kubeconfig for EKS..."
                 aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
 
