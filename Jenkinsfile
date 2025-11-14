@@ -1,23 +1,22 @@
 pipeline {
     agent any
-    // agent {
-    //     docker { image 'node:24.11.0-alpine3.22' }
-    // }
 
     tools {   
         maven 'Maven3'
         jdk 'JDK17'
-        //docker 'docker'
     }
 
     environment {
         DOCKERHUB_CREDENTIALS = "docker_hub_cred"
-        DOCKERHUB_REPO = "jayu3110/boardgame-listing"
-        IMAGE_NAME = "boardgame-listing"
-        IMAGE_TAG = "${env.GIT_COMMIT.take(7)}"
-        SONARQUBE_ENV = 'MySonarQubeServer' 
-        BASTION_HOST = 'ec2-13-229-47-163.ap-southeast-1.compute.amazonaws.com'
-        BASTION_USER = 'ec2-user'
+        DOCKERHUB_REPO        = "jayu3110/boardgame-listing"
+        IMAGE_NAME            = "boardgame-listing"
+        IMAGE_TAG             = "${env.GIT_COMMIT.take(7)}"
+
+        SONARQUBE_ENV         = 'MySonarQubeServer'
+
+        AWS_REGION       = 'ap-south-1'
+        EKS_CLUSTER_NAME = 'boardgame-eks-cluster'
+        KUBE_NAMESPACE   = 'capstone'
     }
 
     stages {
@@ -27,6 +26,7 @@ pipeline {
                     url: 'https://github.com/JK00119500/boardgame.git'
             }
         }
+
         stage('Build') {
             steps {
                 sh '''
@@ -34,6 +34,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 sh "pwd"
@@ -43,6 +44,7 @@ pipeline {
                 sh "docker tag ${IMAGE_NAME}:latest ${DOCKERHUB_REPO}:latest"
             }
         }
+
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
@@ -53,18 +55,19 @@ pipeline {
                 }
             }
         }
+
         stage('Trivy scan') {
             steps {
                 sh '''
                 docker run --rm --name trivy-cli \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v $(which docker):/usr/bin/docker \
-            -u root \
-            -e DOCKER_GID=$(getent group docker | cut -d: -f3) \
-            aquasec/trivy:latest image \
-            ${IMAGE_NAME}
-            '''
-        }}
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    -u root \
+                    aquasec/trivy:latest image \
+                    ${IMAGE_NAME}:latest
+                '''
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv("${SONARQUBE_ENV}") {
@@ -72,36 +75,37 @@ pipeline {
                 }
             }
         }
+
         stage('OWASP Dependency-Check Vulnerabilities') {
             steps {
-            dependencyCheck additionalArguments: ''' 
+                dependencyCheck additionalArguments: ''' 
                     -o './'
                     -s './'
                     -f 'ALL' 
                     --prettyPrint''', odcInstallation: 'owasp-DC'
-            dependencyCheckPublisher pattern: 'dependency-check-report.xml'   
+                dependencyCheckPublisher pattern: 'dependency-check-report.xml'   
             }
         }
-        stage('Sanity: SSH to EKS Jump') {
+
+        stage('Deploy to EKS') {
             steps {
-                sshagent(credentials: ['eks_jump_ssh']) {
-                    sh '''
-                    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                    ${BASTION_USER}@${BASTION_HOST} 'hostname && whoami && aws --version || true'
-                    '''
-                    }
-                    }
-                    }
-        stage('app deploy on eks'){
-        steps{
-            sshagent(credentials: ['eks_jump_ssh']) {
-            
-            sh '''
-                ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-                ${BASTION_USER}@${BASTION_HOST} 'sudo su root && whoami && aws eks update-kubeconfig --name boardgame-eks-cluster --region ap-southeast-1 && kubectl create ns capstone --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f /opt/app-files/deployment.yaml -n capstone && kubectl rollout restart deployment.apps/boardgame-app -n capstone
-                '
+                sh '''
+                echo "Updating kubeconfig for EKS..."
+                aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
+
+                echo "Ensuring namespace exists..."
+                kubectl create namespace ${KUBE_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+
+                echo "Applying Kubernetes manifests..."
+                kubectl apply -f k8s/namespace.yml
+                kubectl apply -f k8s/deployment.yml -n ${KUBE_NAMESPACE}
+                kubectl apply -f k8s/service.yaml -n ${KUBE_NAMESPACE}
+
+                echo "Waiting for deployment rollout..."
+                kubectl rollout status deployment/boardgame-app -n ${KUBE_NAMESPACE}
                 '''
             }
         }
     }
-}}
+}
+
