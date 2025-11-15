@@ -25,8 +25,6 @@ module "eks" {
       capacity_type  = "ON_DEMAND"
     }
   }
-
-  # Nodes साठी SG वर 8080 open (NLB/ELB traffic)
   node_security_group_additional_rules = {
     ingress_http_8080 = {
       description      = "Allow inbound 8080"
@@ -39,10 +37,9 @@ module "eks" {
     }
   }
 
-  # Terraform चालवणारा user स्वतः admin होईल
   enable_cluster_creator_admin_permissions = true
 
-  # Jenkins / boardgame-terraform user साठी explicit admin access
+
   access_entries = {
     jenkins_admin = {
       principal_arn = "arn:aws:iam::599801266123:user/boardgame-terraform"
