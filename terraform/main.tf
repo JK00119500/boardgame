@@ -1,10 +1,12 @@
 terraform {
   required_version = ">= 1.3.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "~> 2.25"
@@ -12,11 +14,18 @@ terraform {
   }
 }
 
+# ---------------------------
+# AWS PROVIDER
+# ---------------------------
 provider "aws" {
   region  = var.aws_region
   profile = "boardgame-dev"
 }
 
+# ---------------------------
+# EKS CLUSTER DATA SOURCES
+# (cluster itself is created by module "eks" elsewhere)
+# ---------------------------
 data "aws_eks_cluster" "eks" {
   name       = module.eks.cluster_name
   depends_on = [module.eks]
@@ -27,6 +36,9 @@ data "aws_eks_cluster_auth" "eks" {
   depends_on = [module.eks]
 }
 
+# ---------------------------
+# KUBERNETES PROVIDER
+# ---------------------------
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.eks.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
@@ -34,23 +46,23 @@ provider "kubernetes" {
   load_config_file       = false
 }
 
-# Allow HTTP-style access on port 8080 from anywhere to the Load Balancer SG
 resource "aws_security_group_rule" "lb_public_ingress_8080" {
   type              = "ingress"
   from_port         = 8080
   to_port           = 8080
   protocol          = "tcp"
-  security_group_id = "sg-068b519bad73771fa"
+  security_group_id = module.eks.cluster_security_group_id
   cidr_blocks       = ["0.0.0.0/0"]
-  description       = "Allow public access to Load Balancer on 8080"
+  description       = "Allow public access to Load Balancer/EKS on 8080"
 }
 
+# Allow HTTPS access on port 443 from anywhere
 resource "aws_security_group_rule" "lb_public_ingress_https" {
   type              = "ingress"
   from_port         = 443
   to_port           = 443
   protocol          = "tcp"
-  security_group_id = "sg-068b519bad73771fa"
+  security_group_id = module.eks.cluster_security_group_id
   cidr_blocks       = ["0.0.0.0/0"]
-  description       = "Allow public HTTPS access to Load Balancer"
+  description       = "Allow public HTTPS access to Load Balancer/EKS"
 }

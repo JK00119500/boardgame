@@ -11,7 +11,6 @@ module "eks" {
   # EKS API endpoint access
   cluster_endpoint_public_access       = true
   cluster_endpoint_private_access      = true
-  # Demo साठी open; real मध्ये इथे तुमचा office / Jenkins IP / VPN द्यायचा
   cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"]
 
   # Managed node group
@@ -39,8 +38,11 @@ module "eks" {
     }
   }
 
-  # Terraform चालवणारा user स्वतः admin होईल
-  enable_cluster_creator_admin_permissions = true
+  # ❌ REMOVE automatic cluster_creator access entry
+  # enable_cluster_creator_admin_permissions = true
+  #
+  # ✅ Let the explicit access_entries manage this user instead:
+  enable_cluster_creator_admin_permissions = false
 
   # Jenkins / boardgame-terraform user साठी explicit admin access
   access_entries = {
