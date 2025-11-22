@@ -14,18 +14,12 @@ terraform {
   }
 }
 
-# ---------------------------
 # AWS PROVIDER
-# ---------------------------
 provider "aws" {
   region  = var.aws_region
   profile = "boardgame-dev"
 }
 
-# ---------------------------
-# EKS CLUSTER DATA SOURCES
-# (cluster itself is created by module "eks" elsewhere)
-# ---------------------------
 data "aws_eks_cluster" "eks" {
   name       = module.eks.cluster_name
   depends_on = [module.eks]
@@ -36,9 +30,6 @@ data "aws_eks_cluster_auth" "eks" {
   depends_on = [module.eks]
 }
 
-# ---------------------------
-# KUBERNETES PROVIDER
-# ---------------------------
 provider "kubernetes" {
   host                   = data.aws_eks_cluster.eks.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
