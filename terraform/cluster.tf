@@ -25,7 +25,6 @@ module "eks" {
     }
   }
 
-  # Nodes साठी SG वर 8080 open (NLB/ELB traffic)
   node_security_group_additional_rules = {
     ingress_http_8080 = {
       description      = "Allow inbound 8080"
@@ -38,13 +37,6 @@ module "eks" {
     }
   }
 
-  # ❌ REMOVE automatic cluster_creator access entry
-  # enable_cluster_creator_admin_permissions = true
-  #
-  # ✅ Let the explicit access_entries manage this user instead:
-  enable_cluster_creator_admin_permissions = false
-
-  # Jenkins / boardgame-terraform user साठी explicit admin access
   access_entries = {
     jenkins_admin = {
       principal_arn = "arn:aws:iam::599801266123:user/boardgame-terraform"
