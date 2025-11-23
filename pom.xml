@@ -95,7 +95,7 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
       </plugin>
 
-      <!-- ✅ Ensure Jacoco generates XML report for SonarQube -->
+    
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -116,7 +116,7 @@
         </executions>
       </plugin>
 
-      <!-- ✅ Explicit Sonar Plugin Version -->
+    
       <plugin>
         <groupId>org.sonarsource.scanner.maven</groupId>
         <artifactId>sonar-maven-plugin</artifactId>
