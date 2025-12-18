@@ -75,7 +75,8 @@ pipeline {
           docker run --rm --name trivy-cli \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -u root \
-            aquasec/trivy:latest image \
+            --timeout 20m \
+            aquasec/trivy:0.68.2 image \
             ${IMAGE_NAME}:latest
         '''
       }
